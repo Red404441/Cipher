@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cipher</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #13111a;
+    --card: #1c1926;
+    --surface: #231f30;
+    --border: #2e2840;
+    --accent: #c084fc;
+    --accent-dim: rgba(192,132,252,0.12);
+    --accent-glow: rgba(192,132,252,0.25);
+    --green: #4ade80;
+    --green-dim: rgba(74,222,128,0.12);
+    --text: #f0ecff;
+    --muted: #7c6fa0;
+    --danger: #f87171;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Sora', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .blob {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.18;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .blob-1 { width: 500px; height: 500px; background: #7c3aed; top: -150px; right: -100px; }
+  .blob-2 { width: 400px; height: 400px; background: #4f46e5; bottom: -100px; left: -100px; }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 500px;
+    animation: rise 0.6s cubic-bezier(.16,1,.3,1) both;
+  }
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 28px;
+  }
+
+  .logo-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+
+  .lock-icon {
+    width: 36px; height: 36px;
+    background: var(--accent-dim);
+    border: 1px solid rgba(192,132,252,0.3);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+
+  h1 {
+    font-size: 26px;
+    font-weight: 600;
+    letter-spacing: -0.5px;
+  }
+
+  .tagline {
+    font-size: 13px;
+    color: var(--muted);
+    font-weight: 300;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 28px;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.4);
+  }
+
+  .field-label {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .key-box {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 4px 4px 14px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .key-box:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-dim);
+  }
+
+  .key-box input {
+    flex: 1;
+    background: none;
+    border: none;
+    outline: none;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--text);
+    min-width: 0;
+    letter-spacing: 0.05em;
+  }
+
+  .key-box input::placeholder { color: var(--muted); }
+
+  .key-actions { display: flex; gap: 4px; }
+
+  .pill-btn {
+    background: var(--border);
+    border: none;
+    border-radius: 8px;
+    padding: 7px 11px;
+    font-size: 12px;
+    cursor: pointer;
+    color: var(--muted);
+    font-family: 'Sora', sans-serif;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .pill-btn:hover { background: #3a3350; color: var(--text); }
+
+  .pill-btn.accent {
+    background: var(--accent-dim);
+    color: var(--accent);
+    border: 1px solid rgba(192,132,252,0.2);
+  }
+
+  .pill-btn.accent:hover {
+    background: rgba(192,132,252,0.2);
+    box-shadow: 0 0 12px var(--accent-glow);
+  }
+
+  .strength-bar {
+    height: 2px;
+    border-radius: 2px;
+    background: var(--border);
+    margin-top: 8px;
+    overflow: hidden;
+  }
+
+  .strength-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.4s, background 0.4s;
+    width: 0%;
+  }
+
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 22px 0;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .msg-area {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 14px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .msg-area:focus-within {
+    border-color: rgba(192,132,252,0.4);
+    box-shadow: 0 0 0 3px var(--accent-dim);
+  }
+
+  .msg-area textarea {
+    width: 100%;
+    background: none;
+    border: none;
+    outline: none;
+    resize: none;
+    font-family: 'Sora', sans-serif;
+    font-size: 14px;
+    color: var(--text);
+    line-height: 1.7;
+    min-height: 100px;
+  }
+
+  .msg-area textarea::placeholder { color: var(--muted); }
+
+  .char-count {
+    font-size: 11px;
+    color: var(--muted);
+    text-align: right;
+    margin-top: 6px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .act-btn {
+    padding: 14px;
+    border: none;
+    border-radius: 12px;
+    font-family: 'Sora', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .btn-enc {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 4px 20px var(--accent-glow);
+  }
+
+  .btn-enc:hover {
+    background: #d8b4fe;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px var(--accent-glow);
+  }
+
+  .btn-dec {
+    background: var(--surface);
+    color: var(--text);
+    border: 1.5px solid var(--border);
+  }
+
+  .btn-dec:hover {
+    background: #2a2538;
+    border-color: var(--muted);
+    transform: translateY(-2px);
+  }
+
+  .act-btn:active { transform: translateY(0) !important; }
+
+  .output-section {
+    display: none;
+  }
+
+  .output-section.visible {
+    display: block;
+    animation: popIn 0.35s cubic-bezier(.16,1,.3,1) both;
+  }
+
+  @keyframes popIn {
+    from { opacity: 0; transform: scale(0.97); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+
+  .output-label {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .output-label.success { color: var(--green); }
+  .output-label.error   { color: var(--danger); }
+
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+  .output-box {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    position: relative;
+  }
+
+  .output-box.success { border-color: rgba(74,222,128,0.3); }
+  .output-box.error   { border-color: rgba(248,113,113,0.3); }
+
+  .output-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12.5px;
+    line-height: 1.7;
+    color: var(--text);
+    word-break: break-all;
+    padding-right: 70px;
+    min-height: 40px;
+  }
+
+  .output-text.is-error { color: var(--danger); font-family: 'Sora', sans-serif; font-size: 13px; word-break: normal; }
+  .output-text.is-plain { font-family: 'Sora', sans-serif; font-size: 14px; word-break: normal; line-height: 1.7; }
+
+  .copy-pill {
+    position: absolute;
+    top: 10px; right: 10px;
+    background: var(--border);
+    border: none;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-family: 'Sora', sans-serif;
+    cursor: pointer;
+    color: var(--muted);
+    transition: all 0.15s;
+  }
+
+  .copy-pill:hover { background: #3a3350; color: var(--text); }
+  .copy-pill.copied { background: var(--green-dim); color: var(--green); }
+
+  .toast {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%) translateY(12px);
+    background: #2e2840;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 20px;
+    border-radius: 100px;
+    font-size: 13px;
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(.16,1,.3,1);
+    pointer-events: none;
+    white-space: nowrap;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    z-index: 100;
+  }
+
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+
+<div class="app">
+  <div class="header">
+    <div class="logo-wrap">
+      <div class="lock-icon">🔒</div>
+      <h1>Cipher</h1>
+    </div>
+    <p class="tagline">Encrypt messages with a shared key</p>
+  </div>
+
+  <div class="card">
+
+    <div style="margin-bottom:24px;">
+      <div class="field-label">
+        <span>Secret Key</span>
+        <span id="strengthLabel" style="font-size:11px;"></span>
+      </div>
+      <div class="key-box">
+        <input type="password" id="secretKey" placeholder="Enter or generate a shared key…" oninput="updateStrength()" />
+        <div class="key-actions">
+          <button class="pill-btn" onclick="toggleVis()" title="Show/hide">👁</button>
+          <button class="pill-btn" onclick="copyKey()">Copy</button>
+          <button class="pill-btn accent" onclick="generateKey()">Generate</button>
+        </div>
+      </div>
+      <div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div>
+    </div>
+
+    <div class="divider">message</div>
+
+    <div class="msg-area">
+      <textarea id="msgInput" placeholder="Type a message to encrypt — or paste an encrypted message to decrypt…" oninput="updateCount()"></textarea>
+      <div class="char-count" id="charCount">0 chars</div>
+    </div>
+
+    <div class="actions">
+      <button class="act-btn btn-enc" onclick="encryptMsg()">🔐 Encrypt</button>
+      <button class="act-btn btn-dec" onclick="decryptMsg()">🔓 Decrypt</button>
+    </div>
+
+    <div class="output-section" id="outputSection">
+      <div class="output-label" id="outputLabel">
+        <div class="dot"></div>
+        <span id="outputLabelText"></span>
+      </div>
+      <div class="output-box" id="outputBox">
+        <div class="output-text" id="outputText"></div>
+        <button class="copy-pill" id="copyPill" onclick="copyOutput()">Copy</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const enc = str => new TextEncoder().encode(str);
+  const dec = buf => new TextDecoder().decode(buf);
+  const toB64 = buf => btoa(String.fromCharCode(...new Uint8Array(buf)));
+  const fromB64 = b64 => Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+
+  function toast(msg) {
+    const t = $('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  function updateCount() {
+    const n = $('msgInput').value.length;
+    $('charCount').textContent = n ? `${n} char${n !== 1 ? 's' : ''}` : '0 chars';
+  }
+
+  async function deriveKey(password) {
+    const base = await crypto.subtle.importKey('raw', enc(password), 'PBKDF2', false, ['deriveKey']);
+    return crypto.subtle.deriveKey(
+      { name: 'PBKDF2', salt: enc('cipher-salt-v1'), iterations: 100000, hash: 'SHA-256' },
+      base,
+      { name: 'AES-GCM', length: 256 },
+      false,
+      ['encrypt', 'decrypt']
+    );
+  }
+
+  async function encryptMsg() {
+    const password = $('secretKey').value;
+    const message  = $('msgInput').value;
+    if (!password) { showOutput('error', 'Enter a secret key first.'); return; }
+    if (!message)  { showOutput('error', 'Enter a message to encrypt.'); return; }
+
+    const key = await deriveKey(password);
+    const iv  = crypto.getRandomValues(new Uint8Array(12));
+    const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc(message));
+
+    const combined = new Uint8Array(iv.byteLength + encrypted.byteLength);
+    combined.set(iv, 0);
+    combined.set(new Uint8Array(encrypted), iv.byteLength);
+
+    showOutput('success', toB64(combined.buffer), false, 'Encrypted — share this');
+  }
+
+  async function decryptMsg() {
+    const password = $('secretKey').value;
+    const cipher   = $('msgInput').value.trim();
+    if (!password) { showOutput('error', 'Enter the secret key first.'); return; }
+    if (!cipher)   { showOutput('error', 'Paste an encrypted message to decrypt.'); return; }
+
+    try {
+      const combined = fromB64(cipher);
+      const iv  = combined.slice(0, 12);
+      const ct  = combined.slice(12);
+      const key = await deriveKey(password);
+      const result = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct);
+      showOutput('success', dec(result), true, 'Decrypted message');
+    } catch {
+      showOutput('error', 'Wrong key or corrupted message.');
+    }
+  }
+
+  function showOutput(type, text, isPlain, labelText) {
+    const section = $('outputSection');
+    section.classList.remove('visible');
+    void section.offsetWidth; // reflow to re-trigger animation
+    section.classList.add('visible');
+
+    const isError = type === 'error';
+    $('outputLabel').className = 'output-label ' + type;
+    $('outputLabelText').textContent = isError ? 'Error' : labelText;
+    $('outputBox').className = 'output-box ' + type;
+    $('outputText').className = 'output-text' + (isError ? ' is-error' : isPlain ? ' is-plain' : '');
+    $('outputText').textContent = text;
+    $('copyPill').style.display = isError ? 'none' : 'block';
+    $('copyPill').textContent = 'Copy';
+    $('copyPill').classList.remove('copied');
+  }
+
+  function copyOutput() {
+    navigator.clipboard.writeText($('outputText').textContent);
+    $('copyPill').textContent = 'Copied!';
+    $('copyPill').classList.add('copied');
+    setTimeout(() => { $('copyPill').textContent = 'Copy'; $('copyPill').classList.remove('copied'); }, 2000);
+  }
+
+  function generateKey() {
+    const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%&';
+    const rand = crypto.getRandomValues(new Uint8Array(18));
+    $('secretKey').value = Array.from(rand).map(b => chars[b % chars.length]).join('');
+    updateStrength();
+    toast('🎲 Key generated — share it with your friend!');
+  }
+
+  function copyKey() {
+    const v = $('secretKey').value;
+    if (!v) { toast('Generate a key first'); return; }
+    navigator.clipboard.writeText(v);
+    toast('🔑 Key copied!');
+  }
+
+  function toggleVis() {
+    const el = $('secretKey');
+    el.type = el.type === 'password' ? 'text' : 'password';
+  }
+
+  function updateStrength() {
+    const val = $('secretKey').value;
+    const fill = $('strengthFill');
+    const lbl  = $('strengthLabel');
+    if (!val) { fill.style.width = '0%'; lbl.textContent = ''; return; }
+
+    let score = 0;
+    if (val.length >= 8)  score++;
+    if (val.length >= 14) score++;
+    if (/[A-Z]/.test(val) && /[a-z]/.test(val)) score++;
+    if (/[0-9]/.test(val)) score++;
+    if (/[^A-Za-z0-9]/.test(val)) score++;
+
+    const levels = [
+      { w: '20%', color: '#f87171', label: 'Weak' },
+      { w: '40%', color: '#fb923c', label: 'Fair' },
+      { w: '60%', color: '#facc15', label: 'Good' },
+      { w: '80%', color: '#a3e635', label: 'Strong' },
+      { w: '100%', color: '#4ade80', label: 'Excellent' },
+    ];
+
+    const lvl = levels[Math.min(score, 4)];
+    fill.style.width = lvl.w;
+    fill.style.background = lvl.color;
+    lbl.style.color = lvl.color;
+    lbl.textContent = lvl.label;
+  }
+</script>
+</body>
+</html>
