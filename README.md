@@ -1,4 +1,4 @@
-#Cipher
+#cipher
 Encrypted messaging with a shared key
 
 What is Cipher?
