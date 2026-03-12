@@ -3,676 +3,1106 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cipher Pro</title>
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<title>Cipher Pro · Secure Encryption</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #13111a;
-    --card: #1c1926;
-    --surface: #231f30;
-    --border: #2e2840;
-    --accent: #c084fc;
-    --accent-dim: rgba(192,132,252,0.12);
-    --accent-glow: rgba(192,132,252,0.25);
-    --green: #4ade80;
-    --green-dim: rgba(74,222,128,0.12);
-    --text: #f0ecff;
-    --muted: #7c6fa0;
-    --danger: #f87171;
-    --warning: #facc15;
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
   }
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #000000;
+    --surface: rgba(255, 255, 255, 0.03);
+    --surface-bright: rgba(255, 255, 255, 0.06);
+    --border: rgba(255, 255, 255, 0.08);
+    --border-bright: rgba(255, 255, 255, 0.15);
+    
+    --primary: #8b5cf6;
+    --primary-bright: #a78bfa;
+    --primary-glow: rgba(139, 92, 246, 0.6);
+    
+    --secondary: #3b82f6;
+    --accent: #ec4899;
+    --success: #10b981;
+    --danger: #ef4444;
+    
+    --text: #ffffff;
+    --text-dim: #a3a3a3;
+    --text-muted: #737373;
+  }
 
   body {
+    font-family: 'Outfit', system-ui, sans-serif;
     background: var(--bg);
     color: var(--text);
-    font-family: 'Sora', sans-serif;
     min-height: 100vh;
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
     padding: 24px;
+    position: relative;
+    overflow-x: hidden;
   }
 
-  .blob {
+  /* Radial gradient background */
+  .bg-radial {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle at 30% 20%, rgba(139, 92, 246, 0.15), transparent 50%),
+                radial-gradient(circle at 70% 80%, rgba(59, 130, 246, 0.1), transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(236, 72, 153, 0.08), transparent 60%);
+    animation: gradientPulse 15s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  @keyframes gradientPulse {
+    0%, 100% { opacity: 0.8; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.05); }
+  }
+
+  /* Noise texture */
+  .noise {
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  /* Animated orbs */
+  .orb {
     position: fixed;
     border-radius: 50%;
-    filter: blur(80px);
-    opacity: 0.18;
+    filter: blur(60px);
+    opacity: 0.2;
     pointer-events: none;
-    z-index: 0;
+    mix-blend-mode: screen;
   }
-  .blob-1 { width: 500px; height: 500px; background: #7c3aed; top: -150px; right: -100px; }
-  .blob-2 { width: 400px; height: 400px; background: #4f46e5; bottom: -100px; left: -100px; }
 
-  .app {
+  .orb-1 {
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, var(--primary), transparent);
+    top: -10%;
+    right: -5%;
+    animation: orb1 20s ease-in-out infinite;
+  }
+
+  .orb-2 {
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, var(--secondary), transparent);
+    bottom: -5%;
+    left: -10%;
+    animation: orb2 18s ease-in-out infinite;
+  }
+
+  @keyframes orb1 {
+    0%, 100% { transform: translate(0, 0); }
+    50% { transform: translate(-100px, 100px); }
+  }
+
+  @keyframes orb2 {
+    0%, 100% { transform: translate(0, 0); }
+    50% { transform: translate(100px, -80px); }
+  }
+
+  .container {
     position: relative;
-    z-index: 1;
+    z-index: 10;
     width: 100%;
-    max-width: 540px;
-    animation: rise 0.6s cubic-bezier(.16,1,.3,1) both;
+    max-width: 640px;
+    animation: fadeIn 0.8s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
-  @keyframes rise {
-    from { opacity: 0; transform: translateY(24px); }
-    to   { opacity: 1; transform: translateY(0); }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
+  /* Header */
   .header {
     text-align: center;
-    margin-bottom: 28px;
+    margin-bottom: 48px;
   }
 
-  .logo-wrap {
+  .brand {
     display: inline-flex;
     align-items: center;
-    gap: 10px;
-    margin-bottom: 6px;
+    gap: 18px;
+    margin-bottom: 18px;
+    animation: float 4s ease-in-out infinite;
   }
 
-  .lock-icon {
-    width: 36px; height: 36px;
-    background: var(--accent-dim);
-    border: 1px solid rgba(192,132,252,0.3);
-    border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 18px;
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-12px); }
   }
 
-  h1 {
-    font-size: 26px;
-    font-weight: 600;
-    letter-spacing: -0.5px;
+  .icon {
+    width: 72px;
+    height: 72px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    border-radius: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    position: relative;
+    box-shadow: 
+      0 20px 60px var(--primary-glow),
+      0 0 0 1px rgba(255, 255, 255, 0.1) inset;
   }
 
-  .tagline {
-    font-size: 13px;
-    color: var(--muted);
-    font-weight: 300;
+  .icon::before {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    border-radius: 24px;
+    z-index: -1;
+    filter: blur(12px);
+    opacity: 0.5;
+    animation: iconGlow 3s ease-in-out infinite;
   }
 
+  @keyframes iconGlow {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 0.8; }
+  }
+
+  .title {
+    font-size: 48px;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    background: linear-gradient(135deg, #ffffff 0%, var(--primary-bright) 40%, var(--secondary) 80%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+  }
+
+  .subtitle {
+    font-size: 16px;
+    color: var(--text-dim);
+    font-weight: 400;
+    margin-top: 12px;
+  }
+
+  /* Main card */
   .card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 28px;
-    box-shadow: 0 24px 60px rgba(0,0,0,0.4);
+    background: linear-gradient(135deg, rgba(20, 20, 20, 0.6), rgba(10, 10, 10, 0.4));
+    backdrop-filter: blur(50px) saturate(150%);
+    border: 1.5px solid var(--border);
+    border-radius: 36px;
+    padding: 48px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 
+      0 40px 100px rgba(0, 0, 0, 0.6),
+      0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+    transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
-  .field-label {
-    font-size: 11px;
-    font-weight: 500;
+  .card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(600px circle at var(--x, 50%) var(--y, 50%), 
+      rgba(139, 92, 246, 0.08), transparent 40%);
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+  }
+
+  .card:hover::before {
+    opacity: 1;
+  }
+
+  .card:hover {
+    border-color: var(--border-bright);
+    transform: translateY(-4px);
+    box-shadow: 
+      0 50px 120px rgba(0, 0, 0, 0.7),
+      0 0 0 1px rgba(255, 255, 255, 0.06) inset;
+  }
+
+  /* Sections */
+  .section {
+    margin-bottom: 36px;
+  }
+
+  .label {
+    font-size: 12px;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--muted);
-    margin-bottom: 8px;
+    letter-spacing: 0.2em;
+    color: var(--text-muted);
+    margin-bottom: 14px;
     display: flex;
     align-items: center;
     justify-content: space-between;
   }
 
-  .key-box {
+  .status-badge {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 5px 12px;
+    border-radius: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    text-transform: none;
+    letter-spacing: 0.02em;
+    transition: all 0.2s;
+  }
+
+  /* Input container */
+  .input-box {
+    position: relative;
+  }
+
+  .input-group {
     background: var(--surface);
     border: 1.5px solid var(--border);
-    border-radius: 12px;
+    border-radius: 18px;
+    padding: 8px;
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 4px 4px 4px 14px;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    gap: 10px;
+    transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    position: relative;
   }
 
-  .key-box:focus-within {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px var(--accent-dim);
+  .input-group::after {
+    content: '';
+    position: absolute;
+    inset: -1.5px;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    border-radius: 18px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: -1;
   }
 
-  .key-box input {
+  .input-group:focus-within {
+    background: var(--surface-bright);
+    border-color: transparent;
+    box-shadow: 
+      0 0 0 4px rgba(139, 92, 246, 0.12),
+      0 12px 32px rgba(139, 92, 246, 0.25);
+    transform: translateY(-2px);
+  }
+
+  .input-group:focus-within::after {
+    opacity: 1;
+  }
+
+  .input {
     flex: 1;
-    background: none;
+    background: transparent;
     border: none;
     outline: none;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 13px;
+    font-family: 'Fira Code', monospace;
+    font-size: 15px;
+    font-weight: 500;
     color: var(--text);
-    min-width: 0;
-    letter-spacing: 0.05em;
+    padding: 14px 18px;
+    letter-spacing: 0.02em;
   }
 
-  .key-box input::placeholder { color: var(--muted); }
+  .input::placeholder {
+    color: var(--text-muted);
+    font-weight: 400;
+  }
 
-  .key-actions { display: flex; gap: 4px; }
+  /* Buttons */
+  .btns {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+  }
 
-  .pill-btn {
-    background: var(--border);
-    border: none;
-    border-radius: 8px;
-    padding: 7px 11px;
-    font-size: 12px;
+  .btn {
+    background: var(--surface-bright);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 12px 18px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-dim);
     cursor: pointer;
-    color: var(--muted);
-    font-family: 'Sora', sans-serif;
-    transition: all 0.15s;
+    transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
     white-space: nowrap;
-  }
-
-  .pill-btn:hover { background: #3a3350; color: var(--text); }
-  .pill-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-
-  .pill-btn.accent {
-    background: var(--accent-dim);
-    color: var(--accent);
-    border: 1px solid rgba(192,132,252,0.2);
-  }
-
-  .pill-btn.accent:hover {
-    background: rgba(192,132,252,0.2);
-    box-shadow: 0 0 12px var(--accent-glow);
-  }
-
-  .strength-bar {
-    height: 2px;
-    border-radius: 2px;
-    background: var(--border);
-    margin-top: 8px;
+    position: relative;
     overflow: hidden;
   }
 
-  .strength-fill {
-    height: 100%;
-    border-radius: 2px;
-    transition: width 0.4s, background 0.4s;
-    width: 0%;
+  .btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), transparent);
+    opacity: 0;
+    transition: opacity 0.2s;
   }
 
-  .checkbox-row {
+  .btn:hover:not(:disabled)::before {
+    opacity: 1;
+  }
+
+  .btn:hover:not(:disabled) {
+    background: var(--surface);
+    border-color: var(--border-bright);
+    color: var(--text);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+  }
+
+  .btn:active:not(:disabled) {
+    transform: scale(0.96);
+  }
+
+  .btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  .btn-accent {
+    background: linear-gradient(135deg, var(--primary), var(--primary-bright));
+    border: none;
+    color: #fff;
+    box-shadow: 0 8px 24px rgba(139, 92, 246, 0.4);
+    font-weight: 800;
+  }
+
+  .btn-accent:hover:not(:disabled) {
+    box-shadow: 0 12px 32px rgba(139, 92, 246, 0.5);
+    transform: translateY(-3px) scale(1.02);
+  }
+
+  /* Strength meter */
+  .meter {
+    height: 8px;
+    background: var(--surface);
+    border-radius: 10px;
+    margin-top: 14px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) inset;
+    position: relative;
+  }
+
+  .meter-fill {
+    height: 100%;
+    border-radius: 10px;
+    transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    width: 0%;
+    position: relative;
+    box-shadow: 0 0 24px currentColor;
+  }
+
+  .meter-fill::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+    animation: shimmer 2.5s linear infinite;
+  }
+
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+
+  /* Checkbox */
+  .check-box {
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin-top: 12px;
-    padding: 10px;
-    background: rgba(192,132,252,0.05);
-    border-radius: 8px;
-    border: 1px solid rgba(192,132,252,0.1);
-  }
-
-  .checkbox-row input[type="checkbox"] {
-    width: 16px;
-    height: 16px;
-    cursor: pointer;
-    accent-color: var(--accent);
-  }
-
-  .checkbox-row label {
-    font-size: 12px;
-    color: var(--muted);
+    gap: 14px;
+    margin-top: 18px;
+    padding: 16px 18px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    transition: all 0.2s;
     cursor: pointer;
     user-select: none;
   }
 
-  .mode-tabs {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 18px;
-    background: var(--surface);
-    padding: 4px;
-    border-radius: 10px;
-    border: 1px solid var(--border);
+  .check-box:hover {
+    background: var(--surface-bright);
+    border-color: var(--border-bright);
   }
 
-  .mode-tab {
-    flex: 1;
-    padding: 10px;
-    background: transparent;
-    border: none;
-    border-radius: 8px;
-    font-family: 'Sora', sans-serif;
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--muted);
+  .checkbox {
+    width: 22px;
+    height: 22px;
     cursor: pointer;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
+    accent-color: var(--primary);
+    flex-shrink: 0;
   }
 
-  .mode-tab.active {
-    background: var(--accent);
-    color: #fff;
-    box-shadow: 0 2px 8px var(--accent-glow);
+  .check-label {
+    font-size: 14px;
+    color: var(--text-dim);
+    cursor: pointer;
   }
 
+  /* Divider */
   .divider {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin: 22px 0;
-    font-size: 11px;
-    color: var(--muted);
-    letter-spacing: 0.08em;
+    gap: 24px;
+    margin: 40px 0;
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--text-muted);
+    letter-spacing: 0.2em;
     text-transform: uppercase;
   }
 
-  .divider::before, .divider::after {
+  .divider::before,
+  .divider::after {
     content: '';
     flex: 1;
-    height: 1px;
-    background: var(--border);
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--border), transparent);
   }
 
-  .msg-area {
-    background: var(--surface);
-    border: 1.5px solid var(--border);
-    border-radius: 12px;
-    padding: 14px;
-    margin-bottom: 14px;
-    transition: border-color 0.2s, box-shadow 0.2s;
-  }
-
-  .msg-area:focus-within {
-    border-color: rgba(192,132,252,0.4);
-    box-shadow: 0 0 0 3px var(--accent-dim);
-  }
-
-  .msg-area textarea {
-    width: 100%;
-    background: none;
-    border: none;
-    outline: none;
-    resize: none;
-    font-family: 'Sora', sans-serif;
-    font-size: 14px;
-    color: var(--text);
-    line-height: 1.7;
-    min-height: 100px;
-  }
-
-  .msg-area textarea::placeholder { color: var(--muted); }
-
-  .char-count {
-    font-size: 11px;
-    color: var(--muted);
-    text-align: right;
-    margin-top: 6px;
-    font-family: 'JetBrains Mono', monospace;
-  }
-
-  .file-drop-zone {
-    background: var(--surface);
-    border: 2px dashed var(--border);
-    border-radius: 12px;
-    padding: 32px 20px;
-    margin-bottom: 14px;
-    text-align: center;
-    transition: all 0.2s;
-    cursor: pointer;
-  }
-
-  .file-drop-zone:hover {
-    border-color: var(--accent);
-    background: var(--accent-dim);
-  }
-
-  .file-drop-zone.drag-over {
-    border-color: var(--accent);
-    background: var(--accent-dim);
-    transform: scale(1.02);
-  }
-
-  .file-drop-zone.has-file {
-    background: rgba(74,222,128,0.08);
-    border-color: var(--green);
-  }
-
-  .upload-icon {
-    font-size: 36px;
-    margin-bottom: 12px;
-  }
-
-  .upload-text {
-    font-size: 14px;
-    color: var(--text);
-    margin-bottom: 4px;
-  }
-
-  .upload-hint {
-    font-size: 12px;
-    color: var(--muted);
-  }
-
-  .file-info {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 16px;
-    background: var(--surface);
-    border-radius: 10px;
-    margin-bottom: 14px;
-  }
-
-  .file-details {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .file-icon {
-    width: 40px;
-    height: 40px;
-    background: var(--accent-dim);
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-  }
-
-  .file-meta {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-
-  .file-name {
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--text);
-  }
-
-  .file-size {
-    font-size: 11px;
-    color: var(--muted);
-    font-family: 'JetBrains Mono', monospace;
-  }
-
-  .remove-file {
-    background: var(--border);
-    border: none;
-    border-radius: 6px;
-    padding: 6px 10px;
-    font-size: 12px;
-    color: var(--muted);
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-
-  .remove-file:hover {
-    background: var(--danger);
-    color: #fff;
-  }
-
-  .actions {
+  /* Tabs */
+  .tabs {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 10px;
-    margin-bottom: 14px;
+    padding: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    margin-bottom: 32px;
   }
 
-  .act-btn {
-    padding: 14px;
+  .tab {
+    padding: 16px 28px;
+    background: transparent;
     border: none;
-    border-radius: 12px;
-    font-family: 'Sora', sans-serif;
-    font-size: 14px;
-    font-weight: 500;
+    border-radius: 14px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--text-dim);
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 12px;
+    position: relative;
   }
 
-  .act-btn:disabled {
-    opacity: 0.5;
+  .tab::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    border-radius: 14px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: -1;
+  }
+
+  .tab:hover:not(.active) {
+    background: var(--surface-bright);
+    color: var(--text);
+    transform: scale(1.03);
+  }
+
+  .tab.active {
+    color: #fff;
+    box-shadow: 
+      0 10px 30px var(--primary-glow),
+      0 0 0 1px rgba(255, 255, 255, 0.15) inset;
+    transform: scale(1.02);
+  }
+
+  .tab.active::before {
+    opacity: 1;
+  }
+
+  /* Textarea */
+  .text-box {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 18px;
+    padding: 20px;
+    margin-bottom: 20px;
+    transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    position: relative;
+  }
+
+  .text-box::after {
+    content: '';
+    position: absolute;
+    inset: -1.5px;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    border-radius: 18px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: -1;
+  }
+
+  .text-box:focus-within {
+    background: var(--surface-bright);
+    border-color: transparent;
+    box-shadow: 
+      0 0 0 4px rgba(139, 92, 246, 0.12),
+      0 12px 32px rgba(139, 92, 246, 0.25);
+  }
+
+  .text-box:focus-within::after {
+    opacity: 1;
+  }
+
+  .textarea {
+    width: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    resize: none;
+    font-family: 'Outfit', sans-serif;
+    font-size: 15px;
+    line-height: 1.9;
+    color: var(--text);
+    min-height: 150px;
+  }
+
+  .textarea::placeholder {
+    color: var(--text-muted);
+  }
+
+  .count {
+    font-size: 13px;
+    font-family: 'Fira Code', monospace;
+    color: var(--text-muted);
+    text-align: right;
+    margin-top: 12px;
+  }
+
+  /* File upload */
+  .upload {
+    background: var(--surface);
+    border: 2.5px dashed var(--border);
+    border-radius: 24px;
+    padding: 72px 40px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    margin-bottom: 20px;
+    position: relative;
+  }
+
+  .upload::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle, rgba(139, 92, 246, 0.1), transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .upload:hover {
+    background: var(--surface-bright);
+    border-color: var(--primary);
+    transform: scale(1.02);
+  }
+
+  .upload:hover::before {
+    opacity: 1;
+  }
+
+  .upload.drag-over {
+    background: rgba(139, 92, 246, 0.12);
+    border-color: var(--primary);
+    transform: scale(1.05);
+  }
+
+  .upload.has-file {
+    background: rgba(16, 185, 129, 0.08);
+    border-color: var(--success);
+    border-style: solid;
+  }
+
+  .upload-emoji {
+    font-size: 64px;
+    margin-bottom: 24px;
+    animation: bounce 3s ease-in-out infinite;
+  }
+
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-16px); }
+  }
+
+  .upload-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 10px;
+  }
+
+  .upload-hint {
+    font-size: 15px;
+    color: var(--text-dim);
+  }
+
+  /* File preview */
+  .preview {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    margin-bottom: 20px;
+    animation: slideUp 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .file-icon {
+    width: 68px;
+    height: 68px;
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(59, 130, 246, 0.15));
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    flex-shrink: 0;
+  }
+
+  .file-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .file-name {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .file-size {
+    font-size: 14px;
+    font-family: 'Fira Code', monospace;
+    color: var(--text-dim);
+  }
+
+  .btn-remove {
+    background: var(--surface-bright);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 12px 20px;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+
+  .btn-remove:hover {
+    background: var(--danger);
+    border-color: var(--danger);
+    color: #fff;
+    transform: scale(1.08);
+  }
+
+  /* Actions */
+  .actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+
+  .btn-main {
+    grid-column: 1 / -1;
+    padding: 20px;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    border: none;
+    border-radius: 18px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 17px;
+    font-weight: 900;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    box-shadow: 
+      0 16px 48px var(--primary-glow),
+      0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+    position: relative;
+    overflow: hidden;
+    letter-spacing: 0.02em;
+  }
+
+  .btn-main::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+    transform: translateX(-100%);
+    transition: transform 0.6s;
+  }
+
+  .btn-main:hover:not(:disabled)::before {
+    transform: translateX(100%);
+  }
+
+  .btn-main:hover:not(:disabled) {
+    box-shadow: 
+      0 24px 60px var(--primary-glow),
+      0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+    transform: translateY(-4px) scale(1.02);
+  }
+
+  .btn-main:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+
+  .btn-main:disabled {
+    opacity: 0.4;
     cursor: not-allowed;
   }
 
-  .btn-auto {
-    background: var(--accent);
-    color: #fff;
-    box-shadow: 0 4px 20px var(--accent-glow);
-    grid-column: 1 / -1;
-  }
-
-  .btn-auto:not(:disabled):hover {
-    background: #d8b4fe;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 28px var(--accent-glow);
-  }
-
-  .btn-clear {
+  .btn-sec {
+    padding: 16px;
     background: var(--surface);
-    color: var(--muted);
-    border: 1.5px solid var(--border);
-    font-size: 12px;
-    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
-  .btn-clear:hover {
-    background: #2a2538;
-    border-color: var(--muted);
+  .btn-sec:hover {
+    background: var(--surface-bright);
+    border-color: var(--border-bright);
+    color: var(--text);
+    transform: translateY(-2px);
   }
 
-  .act-btn:active:not(:disabled) { transform: translateY(0) !important; }
-
-  .output-section {
+  /* Output */
+  .output {
     display: none;
   }
 
-  .output-section.visible {
+  .output.show {
     display: block;
-    animation: popIn 0.35s cubic-bezier(.16,1,.3,1) both;
+    animation: appear 0.5s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
-  @keyframes popIn {
-    from { opacity: 0; transform: scale(0.97); }
-    to   { opacity: 1; transform: scale(1); }
+  @keyframes appear {
+    from {
+      opacity: 0;
+      transform: translateY(32px) scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
   }
 
   .output-label {
-    font-size: 11px;
-    font-weight: 500;
+    font-size: 13px;
+    font-weight: 900;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
-    margin-bottom: 8px;
+    letter-spacing: 0.2em;
+    margin-bottom: 16px;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 12px;
   }
 
-  .output-label.success { color: var(--green); }
-  .output-label.error   { color: var(--danger); }
+  .output-label.success {
+    color: var(--success);
+  }
 
-  .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .output-label.error {
+    color: var(--danger);
+  }
+
+  .indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: currentColor;
+    animation: pulse 2s ease-in-out infinite;
+    box-shadow: 0 0 16px currentColor;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; transform: scale(1.4); }
+  }
 
   .output-box {
     background: var(--surface);
     border: 1.5px solid var(--border);
-    border-radius: 12px;
-    padding: 14px;
+    border-radius: 18px;
+    padding: 24px;
     position: relative;
+    transition: all 0.3s;
   }
 
-  .output-box.success { border-color: rgba(74,222,128,0.3); }
-  .output-box.error   { border-color: rgba(248,113,113,0.3); }
+  .output-box.success {
+    border-color: var(--success);
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.12);
+  }
+
+  .output-box.error {
+    border-color: var(--danger);
+    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.12);
+  }
 
   .output-text {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 12.5px;
-    line-height: 1.7;
+    font-family: 'Fira Code', monospace;
+    font-size: 14px;
+    line-height: 2;
     color: var(--text);
     word-break: break-all;
-    padding-right: 70px;
-    min-height: 40px;
+    padding-right: 140px;
+    min-height: 70px;
   }
 
-  .output-text.is-error { color: var(--danger); font-family: 'Sora', sans-serif; font-size: 13px; word-break: normal; }
-  .output-text.is-plain { font-family: 'Sora', sans-serif; font-size: 14px; word-break: normal; line-height: 1.7; }
+  .output-text.plain {
+    font-family: 'Outfit', sans-serif;
+    font-size: 16px;
+    word-break: normal;
+    line-height: 1.9;
+  }
+
+  .output-text.error {
+    color: var(--danger);
+    font-family: 'Outfit', sans-serif;
+    font-size: 16px;
+    word-break: normal;
+  }
 
   .output-actions {
     position: absolute;
-    top: 10px;
-    right: 10px;
+    top: 20px;
+    right: 20px;
     display: flex;
-    gap: 4px;
+    gap: 10px;
   }
 
-  .out-pill {
-    background: var(--border);
-    border: none;
-    border-radius: 8px;
-    padding: 6px 12px;
-    font-size: 12px;
-    font-family: 'Sora', sans-serif;
-    cursor: pointer;
-    color: var(--muted);
-    transition: all 0.15s;
-  }
-
-  .out-pill:hover { background: #3a3350; color: var(--text); }
-  .out-pill.copied { background: var(--green-dim); color: var(--green); }
-
-  .toast {
-    position: fixed;
-    bottom: 28px;
-    left: 50%;
-    transform: translateX(-50%) translateY(12px);
-    background: #2e2840;
+  .out-btn {
+    background: var(--surface-bright);
     border: 1px solid var(--border);
-    color: var(--text);
-    padding: 10px 20px;
-    border-radius: 100px;
-    font-size: 13px;
-    opacity: 0;
-    transition: all 0.3s cubic-bezier(.16,1,.3,1);
-    pointer-events: none;
-    white-space: nowrap;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-    z-index: 100;
+    border-radius: 12px;
+    padding: 12px 18px;
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: all 0.2s;
   }
 
-  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .out-btn:hover {
+    background: var(--surface);
+    border-color: var(--border-bright);
+    color: var(--text);
+    transform: scale(1.08);
+  }
 
-  .info-badge {
+  .out-btn.copied {
+    background: rgba(16, 185, 129, 0.2);
+    border-color: var(--success);
+    color: var(--success);
+  }
+
+  .info {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    font-size: 11px;
-    color: var(--muted);
-    background: rgba(192,132,252,0.05);
-    padding: 4px 10px;
-    border-radius: 6px;
-    margin-top: 6px;
+    gap: 12px;
+    font-size: 14px;
+    color: var(--text-dim);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 12px 18px;
+    border-radius: 14px;
+    margin-top: 16px;
   }
 
-  .hidden { display: none !important; }
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 48px;
+    left: 50%;
+    transform: translateX(-50%) translateY(40px);
+    background: rgba(20, 20, 20, 0.98);
+    backdrop-filter: blur(40px);
+    border: 1.5px solid var(--border-bright);
+    color: var(--text);
+    padding: 18px 32px;
+    border-radius: 100px;
+    font-size: 16px;
+    font-weight: 700;
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    pointer-events: none;
+    white-space: nowrap;
+    box-shadow: 
+      0 24px 72px rgba(0, 0, 0, 0.9),
+      0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+    z-index: 1000;
+  }
+
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  .hidden {
+    display: none !important;
+  }
+
+  /* Mobile */
+  @media (max-width: 640px) {
+    body { padding: 20px; }
+    .card { padding: 32px; }
+    .title { font-size: 40px; }
+    .icon { width: 64px; height: 64px; font-size: 32px; }
+  }
 </style>
 </head>
 <body>
 
-<div class="blob blob-1"></div>
-<div class="blob blob-2"></div>
+<div class="bg-radial"></div>
+<div class="noise"></div>
 
-<div class="app">
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+
+<div class="container">
   <div class="header">
-    <div class="logo-wrap">
-      <div class="lock-icon">🔒</div>
-      <h1>Cipher Pro</h1>
+    <div class="brand">
+      <div class="icon">🔐</div>
+      <h1 class="title">Cipher Pro</h1>
     </div>
-    <p class="tagline">Encrypt messages, images & files with AES-256</p>
+    <p class="subtitle">Military-grade AES-256 encryption for messages & files</p>
   </div>
 
-  <div class="card">
-
-    <div style="margin-bottom:24px;">
-      <div class="field-label">
+  <div class="card" id="card">
+    <!-- Secret Key -->
+    <div class="section">
+      <div class="label">
         <span>Secret Key</span>
-        <span id="strengthLabel" style="font-size:11px;"></span>
+        <span class="status-badge" id="strengthBadge"></span>
       </div>
-      <div class="key-box">
-        <input type="password" id="secretKey" placeholder="Enter or generate a shared key…" oninput="updateStrength()" />
-        <div class="key-actions">
-          <button class="pill-btn" onclick="toggleVis()" title="Show/hide">👁</button>
-          <button class="pill-btn" onclick="copyKey()">Copy</button>
-          <button class="pill-btn accent" onclick="generateKey()">Generate</button>
+      <div class="input-box">
+        <div class="input-group">
+          <input type="password" id="secretKey" class="input" placeholder="Enter or generate a shared key…" oninput="updateStrength()">
+          <div class="btns">
+            <button class="btn" onclick="toggleVis()">👁</button>
+            <button class="btn" onclick="copyKey()">Copy</button>
+            <button class="btn btn-accent" onclick="generateKey()">Generate</button>
+          </div>
         </div>
       </div>
-      <div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div>
+      <div class="meter">
+        <div class="meter-fill" id="meterFill"></div>
+      </div>
       
-      <div class="checkbox-row">
-        <input type="checkbox" id="rememberKey" onchange="handleRememberKey()">
-        <label for="rememberKey">Remember key this session (⚠️ clears on browser close)</label>
+      <div class="check-box" onclick="toggleCheck()">
+        <input type="checkbox" id="rememberKey" class="checkbox" onchange="handleRememberKey()">
+        <span class="check-label">Remember key this session ⚠️ clears on browser close</span>
       </div>
     </div>
 
-    <div class="divider">mode</div>
+    <div class="divider">Mode</div>
 
-    <div class="mode-tabs">
-      <button class="mode-tab active" onclick="switchMode('text')" id="textTab">
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab active" onclick="switchMode('text')" id="textTab">
         💬 Text
       </button>
-      <button class="mode-tab" onclick="switchMode('file')" id="fileTab">
+      <button class="tab" onclick="switchMode('file')" id="fileTab">
         📎 File
       </button>
     </div>
 
-    <!-- TEXT MODE -->
+    <!-- Text Mode -->
     <div id="textMode">
-      <div class="msg-area">
-        <textarea id="msgInput" placeholder="Type a message to encrypt — or paste an encrypted message to decrypt…" oninput="handleInput()"></textarea>
-        <div class="char-count" id="charCount">0 chars</div>
+      <div class="text-box">
+        <textarea class="textarea" id="msgInput" placeholder="Type a message to encrypt — or paste an encrypted message to decrypt…" oninput="handleInput()"></textarea>
+        <div class="count" id="charCount">0 chars</div>
       </div>
     </div>
 
-    <!-- FILE MODE -->
+    <!-- File Mode -->
     <div id="fileMode" class="hidden">
       <input type="file" id="fileInput" style="display:none" onchange="handleFileSelect(event)">
       
-      <div id="dropZone" class="file-drop-zone" onclick="$('fileInput').click()">
-        <div class="upload-icon">📁</div>
-        <div class="upload-text">Click to choose or drag & drop</div>
+      <div id="dropZone" class="upload" onclick="$('fileInput').click()">
+        <div class="upload-emoji">📁</div>
+        <div class="upload-title">Click to choose or drag & drop</div>
         <div class="upload-hint">Images, PDFs, documents — up to 50MB</div>
       </div>
 
-      <div id="fileInfoBox" class="hidden">
-        <div class="file-info">
-          <div class="file-details">
-            <div class="file-icon" id="fileIcon">📄</div>
-            <div class="file-meta">
-              <div class="file-name" id="fileName">filename.pdf</div>
-              <div class="file-size" id="fileSize">0 KB</div>
-            </div>
+      <div id="filePreview" class="hidden">
+        <div class="preview">
+          <div class="file-icon" id="fileIcon">📄</div>
+          <div class="file-info">
+            <div class="file-name" id="fileName">filename.pdf</div>
+            <div class="file-size" id="fileSize">0 KB</div>
           </div>
-          <button class="remove-file" onclick="removeFile()">✕ Remove</button>
+          <button class="btn-remove" onclick="removeFile()">✕ Remove</button>
         </div>
       </div>
     </div>
 
+    <!-- Actions -->
     <div class="actions">
-      <button class="act-btn btn-auto" id="autoBtn" onclick="autoProcess()" disabled>
-        <span id="autoBtnText">🔐 Encrypt</span>
+      <button class="btn-main" id="mainBtn" onclick="autoProcess()" disabled>
+        <span id="btnText">🔐 Encrypt</span>
       </button>
-      <button class="act-btn btn-clear" onclick="clearAll()">🗑 Clear All</button>
+      <button class="btn-sec" onclick="clearAll()">Clear All</button>
     </div>
 
-    <div class="output-section" id="outputSection">
+    <!-- Output -->
+    <div class="output" id="outputSection">
       <div class="output-label" id="outputLabel">
-        <div class="dot"></div>
-        <span id="outputLabelText"></span>
+        <div class="indicator"></div>
+        <span id="labelText"></span>
       </div>
       <div class="output-box" id="outputBox">
         <div class="output-text" id="outputText"></div>
         <div class="output-actions">
-          <button class="out-pill" id="copyPill" onclick="copyOutput()">Copy</button>
-          <button class="out-pill" id="downloadPill" onclick="downloadOutput()">💾</button>
+          <button class="out-btn" id="copyBtn" onclick="copyOutput()">Copy</button>
+          <button class="out-btn" id="downloadBtn" onclick="downloadOutput()">💾</button>
         </div>
       </div>
-      <div class="info-badge" id="infoBadge"></div>
+      <div class="info" id="infoTag"></div>
     </div>
 
   </div>
@@ -690,7 +1120,7 @@
   const VERSION = 'v2';
   const ITERATIONS = 600000;
   const SALT_SIZE = 16;
-  const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+  const MAX_FILE_SIZE = 50 * 1024 * 1024;
 
   let currentMode = 'text';
   let selectedFile = null;
@@ -698,7 +1128,16 @@
   let lastOutputMode = 'encrypt';
   let lastOutputFilename = '';
 
-  // Load saved key on startup
+  // Card glow effect
+  const card = $('card');
+  card.addEventListener('mousemove', e => {
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    card.style.setProperty('--x', `${x}px`);
+    card.style.setProperty('--y', `${y}px`);
+  });
+
   window.addEventListener('DOMContentLoaded', () => {
     const saved = sessionStorage.getItem('cipher_key');
     if (saved) {
@@ -726,9 +1165,7 @@
     zone.addEventListener('drop', e => {
       zone.classList.remove('drag-over');
       const files = e.dataTransfer.files;
-      if (files.length > 0) {
-        handleFile(files[0]);
-      }
+      if (files.length > 0) handleFile(files[0]);
     });
   }
 
@@ -736,7 +1173,13 @@
     const t = $('toast');
     t.textContent = msg;
     t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 2200);
+    setTimeout(() => t.classList.remove('show'), 2600);
+  }
+
+  function toggleCheck() {
+    const cb = $('rememberKey');
+    cb.checked = !cb.checked;
+    handleRememberKey();
   }
 
   function switchMode(mode) {
@@ -745,13 +1188,9 @@
     $('fileTab').classList.toggle('active', mode === 'file');
     $('textMode').classList.toggle('hidden', mode !== 'text');
     $('fileMode').classList.toggle('hidden', mode !== 'file');
-    $('outputSection').classList.remove('visible');
+    $('outputSection').classList.remove('show');
     
-    if (mode === 'text') {
-      handleInput();
-    } else {
-      updateFileButton();
-    }
+    updateButtonState();
   }
 
   function handleFileSelect(e) {
@@ -789,17 +1228,17 @@
     $('fileName').textContent = file.name;
     $('fileSize').textContent = formatSize(file.size);
     $('dropZone').classList.add('has-file');
-    $('fileInfoBox').classList.remove('hidden');
+    $('filePreview').classList.remove('hidden');
     
-    updateFileButton();
+    updateButtonState();
   }
 
   function removeFile() {
     selectedFile = null;
     $('fileInput').value = '';
     $('dropZone').classList.remove('has-file');
-    $('fileInfoBox').classList.add('hidden');
-    updateFileButton();
+    $('filePreview').classList.add('hidden');
+    updateButtonState();
   }
 
   function formatSize(bytes) {
@@ -808,29 +1247,34 @@
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   }
 
-  function updateFileButton() {
-    const btn = $('autoBtn');
-    const hasKey = $('secretKey').value.length > 0;
-    const hasFile = selectedFile !== null;
+  function updateButtonState() {
+    const btn = $('mainBtn');
+    const btnText = $('btnText');
+    const hasKey = $('secretKey').value.length >= 8;
     
-    btn.disabled = !hasKey || !hasFile;
-    $('autoBtnText').textContent = '🔐 Encrypt File';
+    if (currentMode === 'text') {
+      const val = $('msgInput').value;
+      const hasMsg = val.length > 0;
+      btn.disabled = !hasKey || !hasMsg;
+      
+      // Auto-detect encrypt vs decrypt
+      const isEncrypted = val.trim().startsWith(VERSION + ':');
+      btnText.textContent = isEncrypted ? '🔓 Decrypt' : '🔐 Encrypt';
+    } else {
+      const hasFile = selectedFile !== null;
+      btn.disabled = !hasKey || !hasFile;
+      
+      // Auto-detect for files
+      const isEncryptedFile = selectedFile && selectedFile.name.endsWith('.encrypted');
+      btnText.textContent = isEncryptedFile ? '🔓 Decrypt File' : '🔐 Encrypt File';
+    }
   }
 
   function handleInput() {
     const val = $('msgInput').value;
     const n = val.length;
     $('charCount').textContent = n ? `${n} char${n !== 1 ? 's' : ''}` : '0 chars';
-    
-    const btn = $('autoBtn');
-    const hasKey = $('secretKey').value.length > 0;
-    const hasMsg = val.length > 0;
-    
-    btn.disabled = !hasKey || !hasMsg;
-    
-    const isEncrypted = val.trim().startsWith(VERSION + ':');
-    const btnText = isEncrypted ? '🔓 Decrypt' : '🔐 Encrypt';
-    $('autoBtnText').textContent = btnText;
+    updateButtonState();
   }
 
   function handleRememberKey() {
@@ -957,11 +1401,9 @@
       
       const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, fileData);
 
-      // Store filename with encryption
       const filenameBytes = enc(selectedFile.name);
       const filenameLen = new Uint8Array([filenameBytes.length]);
       
-      // Combine: salt + iv + filenameLen + filename + encrypted
       const combined = new Uint8Array(
         salt.length + iv.length + 1 + filenameBytes.length + encrypted.byteLength
       );
@@ -996,7 +1438,6 @@
       const encryptedData = await selectedFile.arrayBuffer();
       const data = new Uint8Array(encryptedData);
       
-      // Extract components
       let offset = 0;
       const salt = data.slice(offset, offset + SALT_SIZE); offset += SALT_SIZE;
       const iv = data.slice(offset, offset + 12); offset += 12;
@@ -1029,54 +1470,48 @@
     if (currentMode === 'text') {
       const input = $('msgInput').value.trim();
       const isEncrypted = input.startsWith(VERSION + ':');
-      if (isEncrypted) {
-        await decryptText();
-      } else {
-        await encryptText();
-      }
+      if (isEncrypted) await decryptText();
+      else await encryptText();
     } else {
-      // File mode - check if it's encrypted
-      if (selectedFile.name.endsWith('.encrypted')) {
-        await decryptFile();
-      } else {
-        await encryptFile();
-      }
+      const isEncryptedFile = selectedFile && selectedFile.name.endsWith('.encrypted');
+      if (isEncryptedFile) await decryptFile();
+      else await encryptFile();
     }
   }
 
-  function showOutput(type, text, isPlain, labelText, infoBadgeText = '') {
+  function showOutput(type, text, isPlain, headerText, infoText = '') {
     const section = $('outputSection');
-    section.classList.remove('visible');
+    section.classList.remove('show');
     void section.offsetWidth;
-    section.classList.add('visible');
+    section.classList.add('show');
 
     const isError = type === 'error';
     $('outputLabel').className = 'output-label ' + type;
-    $('outputLabelText').textContent = isError ? 'Error' : labelText;
+    $('labelText').textContent = isError ? 'Error' : headerText;
     $('outputBox').className = 'output-box ' + type;
-    $('outputText').className = 'output-text' + (isError ? ' is-error' : isPlain ? ' is-plain' : '');
+    $('outputText').className = 'output-text' + (isError ? ' error' : isPlain ? ' plain' : '');
     $('outputText').textContent = text;
     
-    $('copyPill').style.display = (isError || lastOutputMode.includes('file')) ? 'none' : 'block';
-    $('downloadPill').style.display = isError ? 'none' : 'block';
-    $('copyPill').textContent = 'Copy';
-    $('copyPill').classList.remove('copied');
+    $('copyBtn').style.display = (isError || lastOutputMode.includes('file')) ? 'none' : 'block';
+    $('downloadBtn').style.display = isError ? 'none' : 'block';
+    $('copyBtn').textContent = 'Copy';
+    $('copyBtn').classList.remove('copied');
     
-    const badge = $('infoBadge');
-    if (infoBadgeText && !isError) {
-      badge.textContent = infoBadgeText;
-      badge.style.display = 'inline-flex';
+    const tag = $('infoTag');
+    if (infoText && !isError) {
+      tag.textContent = infoText;
+      tag.style.display = 'inline-flex';
     } else {
-      badge.style.display = 'none';
+      tag.style.display = 'none';
     }
   }
 
   function copyOutput() {
     navigator.clipboard.writeText($('outputText').textContent);
-    $('copyPill').textContent = 'Copied!';
-    $('copyPill').classList.add('copied');
+    $('copyBtn').textContent = 'Copied!';
+    $('copyBtn').classList.add('copied');
     toast('📋 Copied to clipboard');
-    setTimeout(() => { $('copyPill').textContent = 'Copy'; $('copyPill').classList.remove('copied'); }, 2000);
+    setTimeout(() => { $('copyBtn').textContent = 'Copy'; $('copyBtn').classList.remove('copied'); }, 2000);
   }
 
   function downloadOutput() {
@@ -1104,7 +1539,7 @@
     const rand = crypto.getRandomValues(new Uint8Array(24));
     $('secretKey').value = Array.from(rand).map(b => chars[b % chars.length]).join('');
     updateStrength();
-    handleRememberKey();
+    if ($('rememberKey').checked) handleRememberKey();
     toast('🎲 Strong key generated — share it securely!');
   }
 
@@ -1123,21 +1558,20 @@
   function clearAll() {
     $('msgInput').value = '';
     removeFile();
-    $('outputSection').classList.remove('visible');
-    handleInput();
+    $('outputSection').classList.remove('show');
+    updateButtonState();
     toast('🗑 Cleared');
   }
 
   function updateStrength() {
     const val = $('secretKey').value;
-    const fill = $('strengthFill');
-    const lbl  = $('strengthLabel');
+    const fill = $('meterFill');
+    const badge = $('strengthBadge');
     
     if (!val) { 
       fill.style.width = '0%'; 
-      lbl.textContent = ''; 
-      if (currentMode === 'text') handleInput();
-      else updateFileButton();
+      badge.textContent = ''; 
+      updateButtonState();
       return; 
     }
 
@@ -1150,22 +1584,21 @@
     if (/[^A-Za-z0-9]/.test(val)) score++;
 
     const levels = [
-      { w: '20%', color: '#f87171', label: 'Too Weak' },
-      { w: '35%', color: '#fb923c', label: 'Weak' },
-      { w: '50%', color: '#facc15', label: 'Fair' },
-      { w: '65%', color: '#a3e635', label: 'Good' },
-      { w: '80%', color: '#4ade80', label: 'Strong' },
-      { w: '100%', color: '#22c55e', label: 'Excellent' },
+      { w: '20%', color: '#ef4444', label: 'Too Weak' },
+      { w: '35%', color: '#f59e0b', label: 'Weak' },
+      { w: '50%', color: '#eab308', label: 'Fair' },
+      { w: '65%', color: '#84cc16', label: 'Good' },
+      { w: '80%', color: '#10b981', label: 'Strong' },
+      { w: '100%', color: '#059669', label: 'Excellent' },
     ];
 
     const lvl = levels[Math.min(score, 5)];
     fill.style.width = lvl.w;
     fill.style.background = lvl.color;
-    lbl.style.color = lvl.color;
-    lbl.textContent = lvl.label;
+    badge.style.color = lvl.color;
+    badge.textContent = lvl.label;
     
-    if (currentMode === 'text') handleInput();
-    else updateFileButton();
+    updateButtonState();
   }
 
   $('secretKey').addEventListener('input', updateStrength);
