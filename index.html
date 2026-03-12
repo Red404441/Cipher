@@ -715,7 +715,7 @@ function chacha20Poly1305Decrypt(key,nonce,cipherWithTag){
 const $ = id => document.getElementById(id);
 const enc = str => new TextEncoder().encode(str);
 const dec = buf => new TextDecoder().decode(buf);
-const toB64 = buf => btoa(String.fromCharCode(...new Uint8Array(buf)));
+const toB64 = buf => { const u8 = (buf instanceof Uint8Array) ? buf : new Uint8Array(buf); let s=''; for(let i=0;i<u8.length;i++) s+=String.fromCharCode(u8[i]); return btoa(s); };
 const fromB64 = b64 => Uint8Array.from(atob(b64), c => c.charCodeAt(0));
 
 const VERSION_STD = 'v2';
@@ -973,7 +973,7 @@ async function encryptText() {
     const key  = await deriveKeyStd(password, salt);
     const iv   = crypto.getRandomValues(new Uint8Array(12));
     const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc(message));
-    const payload = VERSION_STD + ':text:' + toB64(salt.buffer) + ':' + toB64(iv.buffer) + ':' + toB64(encrypted);
+    const payload = VERSION_STD + ':text:' + toB64(salt) + ':' + toB64(iv) + ':' + toB64(new Uint8Array(encrypted));
     lastOutputData = payload; lastOutputMode = 'encrypt'; lastOutputFilename = 'encrypted-message.txt';
     showOutput('success', payload, false, 'Encrypted — share this', `${ITERATIONS_STD.toLocaleString()} iterations · AES-256-GCM`);
   } catch (err) { showOutput('error', 'Encryption failed: ' + err.message); }
@@ -1158,9 +1158,9 @@ async function encryptTextParanoid() {
     const { enc3, salts, ivs } = await tripleEncrypt(enc(message), password);
     const [s1,s2,s3] = salts; const [iv1,iv2,iv3] = ivs;
     const payload = VERSION_PAR + ':text:' +
-      toB64(s1.buffer)+':'+toB64(s2.buffer)+':'+toB64(s3.buffer)+':'+
-      toB64(iv1.buffer)+':'+toB64(iv2.buffer)+':'+toB64(iv3.buffer)+':'+
-      toB64(enc3.buffer);
+      toB64(s1)+':'+toB64(s2)+':'+toB64(s3)+':'+
+      toB64(iv1)+':'+toB64(iv2)+':'+toB64(iv3)+':'+
+      toB64(enc3);
     const elapsed = ((Date.now()-t0)/1000).toFixed(1);
     lastOutputData = payload; lastOutputMode = 'encrypt'; lastOutputFilename = 'encrypted-paranoid.txt';
     showOutput('success', payload, false, '🔴 PARANOID Encrypted',
@@ -1180,9 +1180,10 @@ async function decryptTextParanoid() {
 
   try {
     const parts = cipher.split(':');
-    if (parts.length < 10) { showOutput('error', 'Invalid PARANOID encrypted format.'); return; }
-    const [version, type] = parts;
-    if (version !== VERSION_PAR) { showOutput('error', `Unsupported version: ${version}`); return; }
+    if (parts.length < 9) { showOutput('error', 'Invalid PARANOID encrypted format. Expected 9 parts, got ' + parts.length); return; }
+    const version = parts[0];
+    const type    = parts[1];
+    if (version !== VERSION_PAR) { showOutput('error', `Unsupported version: "${version}" — are you in the right mode?`); return; }
     if (type !== 'text') { showOutput('error', 'This is an encrypted file. Switch to File mode.'); return; }
     const salts = [fromB64(parts[2]), fromB64(parts[3]), fromB64(parts[4])];
     const ivs   = [fromB64(parts[5]), fromB64(parts[6]), fromB64(parts[7])];
